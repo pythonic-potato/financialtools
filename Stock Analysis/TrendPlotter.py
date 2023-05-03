@@ -1,0 +1,80 @@
+import os
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+import math
+
+def plot_trend_data(data_file, position, num_future_years=5, trading_days_per_year=260):
+    # Read in the CSV file
+    data = pd.read_csv(data_file)
+    date_col = pd.to_datetime(data['Date'].iloc[1:])  # Convert the 'Date' column to a datetime object, skipping the header row
+    # Extract the fifth column
+    col_data = data.iloc[:, 4]
+    # Convert the data to a numeric type
+    col_data = pd.to_numeric(col_data)
+    last_series = col_data[-1000:]
+    max_val, min_val, average_val = np.max(last_series), np.min(last_series), (np.max(last_series) + np.min(last_series)) / 2
+    num_future_points = num_future_years * trading_days_per_year
+    x_extended = np.arange(len(col_data) + num_future_points)
+
+    # Calculate the trendlines
+    trendlines = {}
+    for label, value in [('best', max_val), ('poor', min_val), ('average', average_val)]:
+        exponent = (np.log(value) - np.log(col_data.iloc[0])) / (len(col_data) - 1)
+        trendline = [col_data.iloc[0]]
+        for i in range(1, len(x_extended)):
+            trendline.append(trendline[-1] * (1 + exponent))
+        trendlines[label] = trendline
+
+    # Create a new figure and plot the curves
+    fig, ax = plt.subplots()
+    colors = {'best': 'green', 'poor': 'red', 'average': 'blue'}
+    for label, trendline in trendlines.items():
+        ax.plot(x_extended, trendline, label=f'Long term trend in {label} case', color=colors[label], alpha=0.3)
+
+    file_title = os.path.splitext(os.path.basename(data_file))[0]
+
+    # Plot the data
+    ax.plot(col_data, linewidth=.3, label=file_title, color='black')
+    for x_val in np.arange(0, len(x_extended), 260):
+        ax.axvline(x_val, color='gray', linewidth=0.5, linestyle='--', alpha=0.3)
+    ax.set_xlabel('Date')
+    ax.set_xticks(np.arange(0, len(x_extended), 260))
+    ax.tick_params(axis='x', which='major', labelsize=0.67 * ax.xaxis.get_ticklabels()[0].get_size())
+    last_data_x = len(col_data) - 1
+    last_data_y = trendlines['average'][last_data_x]
+    ax.annotate('click to adjust', xy=(last_data_x, last_data_y), xycoords='data',
+            fontsize=9, color='blue', ha='center', va='center', alpha=0.4)
+    date_ticks = date_col.iloc[np.arange(0, len(col_data), 260)].dt.year.astype(str)
+    last_valid_date = date_col.dropna().iloc[-1]
+    date_ticks_extended = pd.concat([date_ticks, pd.Series([(date_col.dropna().iloc[-1] + pd.DateOffset(days=i * trading_days_per_year)).strftime('%Y') for i in range(1, num_future_years + 1)])]).reset_index(drop=True)
+    ax.set_xticklabels(date_ticks_extended, rotation=45, ha='right')
+    ax.set_ylabel('Price')
+    ax.set_title(file_title)
+    ax.legend()
+
+    # Allow moving the average trendline by selecting a point on the plot
+    def onclick(event):
+        if event.inaxes == ax:
+            y_val = event.ydata
+            exponent = (np.log(y_val) - np.log(trendlines['average'][0])) / (len(col_data) - 1)
+            trendlines['average'] = [col_data.iloc[0]]
+            for i in range(1, len(x_extended)):
+                trendlines['average'].append(trendlines['average'][-1] * (1 + exponent))
+            ax.lines[2].set_ydata(trendlines['average'])
+            fig.canvas.draw()
+
+    fig.canvas.mpl_connect('button_press_event', onclick)
+    plt.show(block=False)
+
+# Plot the data from the first file in one window
+data_filename = 'GSPC.csv'
+script_dir = os.path.dirname(os.path.abspath(__file__))
+data_file_path = os.path.join(script_dir, data_filename)
+plot_trend_data(data_file_path, position=None)
+plt.pause(0.1)
+plt.show()
+
+
+
+
