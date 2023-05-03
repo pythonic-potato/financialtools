@@ -7,19 +7,24 @@ import math
 def plot_trend_data(data_file, position, num_future_years=5, trading_days_per_year=260):
     # Read in the CSV file
     data = pd.read_csv(data_file)
-    date_col = pd.to_datetime(data['Date'].iloc[1:])  # Convert the 'Date' column to a datetime object, skipping the header row
+    # Convert the 'Date' column to a datetime object, skipping the header row
+    date_col = pd.to_datetime(data['Date'].iloc[1:])
     # Extract the fifth column
     col_data = data.iloc[:, 4]
     # Convert the data to a numeric type
     col_data = pd.to_numeric(col_data)
+
+    # Calculate the max, min and average values for the last 1000 data points
     last_series = col_data[-1000:]
     max_val, min_val, average_val = np.max(last_series), np.min(last_series), (np.max(last_series) + np.min(last_series)) / 2
+
+    # Prepare the x-axis for plotting the trendlines with extended future points
     num_future_points = num_future_years * trading_days_per_year
     x_extended = np.arange(len(col_data) + num_future_points)
 
     # Calculate the trendlines
     trendlines = {}
-    for label, value in [('best', max_val), ('poor', min_val), ('average', average_val)]:
+    for label, value in [('good', max_val), ('poor', min_val), ('average', average_val)]:
         exponent = (np.log(value) - np.log(col_data.iloc[0])) / (len(col_data) - 1)
         trendline = [col_data.iloc[0]]
         for i in range(1, len(x_extended)):
@@ -28,29 +33,42 @@ def plot_trend_data(data_file, position, num_future_years=5, trading_days_per_ye
 
     # Create a new figure and plot the curves
     fig, ax = plt.subplots()
-    colors = {'best': 'green', 'poor': 'red', 'average': 'blue'}
+    colors = {'good': 'green', 'poor': 'red', 'average': 'blue'}
     for label, trendline in trendlines.items():
         ax.plot(x_extended, trendline, label=f'Long term trend in {label} case', color=colors[label], alpha=0.3)
 
+    # Extract the filename without extension for use as the plot title
     file_title = os.path.splitext(os.path.basename(data_file))[0]
 
     # Plot the data
     ax.plot(col_data, linewidth=.3, label=file_title, color='black')
+
+    # Add vertical lines for each year
     for x_val in np.arange(0, len(x_extended), 260):
         ax.axvline(x_val, color='gray', linewidth=0.5, linestyle='--', alpha=0.3)
+
+    # Set x-axis label and tick properties
     ax.set_xlabel('Date')
     ax.set_xticks(np.arange(0, len(x_extended), 260))
     ax.tick_params(axis='x', which='major', labelsize=0.67 * ax.xaxis.get_ticklabels()[0].get_size())
+
+    # Add "click to adjust" text to the blue line
     last_data_x = len(col_data) - 1
     last_data_y = trendlines['average'][last_data_x]
     ax.annotate('click to adjust', xy=(last_data_x, last_data_y), xycoords='data',
             fontsize=9, color='blue', ha='center', va='center', alpha=0.4)
+
+    # Prepare x-axis labels with only the year
     date_ticks = date_col.iloc[np.arange(0, len(col_data), 260)].dt.year.astype(str)
     last_valid_date = date_col.dropna().iloc[-1]
     date_ticks_extended = pd.concat([date_ticks, pd.Series([(date_col.dropna().iloc[-1] + pd.DateOffset(days=i * trading_days_per_year)).strftime('%Y') for i in range(1, num_future_years + 1)])]).reset_index(drop=True)
     ax.set_xticklabels(date_ticks_extended, rotation=45, ha='right')
+
+    # Set y-axis label and plot title
     ax.set_ylabel('Price')
     ax.set_title(file_title)
+
+    # Add a legend to the plot
     ax.legend()
 
     # Allow moving the average trendline by selecting a point on the plot
@@ -64,7 +82,10 @@ def plot_trend_data(data_file, position, num_future_years=5, trading_days_per_ye
             ax.lines[2].set_ydata(trendlines['average'])
             fig.canvas.draw()
 
+    # Connect the onclick function to the figure
     fig.canvas.mpl_connect('button_press_event', onclick)
+
+    # Show the plot
     plt.show(block=False)
 
 # Plot the data from the first file in one window
@@ -72,9 +93,7 @@ data_filename = 'GSPC.csv'
 script_dir = os.path.dirname(os.path.abspath(__file__))
 data_file_path = os.path.join(script_dir, data_filename)
 plot_trend_data(data_file_path, position=None)
+
+# Keep the plot window open
 plt.pause(0.1)
 plt.show()
-
-
-
-
