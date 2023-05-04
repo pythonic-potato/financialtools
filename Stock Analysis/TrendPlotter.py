@@ -61,7 +61,7 @@ def plot_trend_data(data_file, position, num_future_years=5, trading_days_per_ye
     # Prepare x-axis labels with only the year
     date_ticks = date_col.iloc[np.arange(0, len(col_data), 260)].dt.year.astype(str)
     last_valid_date = date_col.dropna().iloc[-1]
-    date_ticks_extended = pd.concat([date_ticks, pd.Series([(date_col.dropna().iloc[-1] + pd.DateOffset(days=i * trading_days_per_year)).strftime('%Y') for i in range(1, num_future_years + 1)])]).reset_index(drop=True)
+    date_ticks_extended = pd.concat([date_ticks, pd.Series([(last_valid_date + pd.DateOffset(months=i * 12)).strftime('%Y') for i in range(0, num_future_years)])]).reset_index(drop=True)
     ax.set_xticklabels(date_ticks_extended, rotation=45, ha='right')
 
     # Set y-axis label and plot title
