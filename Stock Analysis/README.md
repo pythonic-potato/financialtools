@@ -10,8 +10,8 @@ This project requires Python and the following dependencies:
 
 To install these dependencies, you can use `pip`. Run the following commands:
 
-pip install pandas
-pip install numpy
-pip install matplotlib
+- pip install pandas
+- pip install numpy
+- pip install matplotlib
 
 Note that a significant portion of this code was generated using ChatGPT.
