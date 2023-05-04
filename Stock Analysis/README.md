@@ -2,4 +2,16 @@ TrendPlotter.py is a Python program that takes in a csv file with stock data and
 
 A sample csv file of the S&P 500 index data is included for reference, which was downloaded from Yahoo finance. 
 
+This project requires Python and the following dependencies:
+
+- pandas
+- numpy
+- matplotlib
+
+To install these dependencies, you can use `pip`. Run the following commands:
+
+pip install pandas
+pip install numpy
+pip install matplotlib
+
 Note that a significant portion of this code was generated using ChatGPT.
