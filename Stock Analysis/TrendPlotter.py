@@ -3,8 +3,22 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import math
+from tkinter import filedialog
+from tkinter import Tk
 
-def plot_trend_data(data_file, position, num_future_years=5, trading_days_per_year=260):
+def calculate_cagr(end_value, start_value, periods):
+    cagr = (end_value / start_value) ** (1/periods) - 1
+    if np.isnan(cagr):
+        print(f"Invalid CAGR calculation: end_value={end_value}, start_value={start_value}, periods={periods}")
+    return cagr
+
+def select_file():
+    root = Tk()
+    root.withdraw() # we don't want a full GUI, so keep the root window from appearing
+    filename = filedialog.askopenfilename() # show an "Open" dialog box and return the path to the selected file
+    return filename
+
+def plot_trend_data(data_file, position, num_future_years=10, trading_days_per_year=260):
     # Read in the CSV file
     data = pd.read_csv(data_file)
     # Convert the 'Date' column to a datetime object, skipping the header row
@@ -24,15 +38,22 @@ def plot_trend_data(data_file, position, num_future_years=5, trading_days_per_ye
 
     # Calculate the trendlines
     trendlines = {}
+    cagr = {}  # Stores the Compound Annual Growth Rate for each scenario
     for label, value in [('good', max_val), ('poor', min_val), ('average', average_val)]:
         exponent = (np.log(value) - np.log(col_data.iloc[0])) / (len(col_data) - 1)
         trendline = [col_data.iloc[0]]
         for i in range(1, len(x_extended)):
             trendline.append(trendline[-1] * (1 + exponent))
         trendlines[label] = trendline
+        if label == 'average':
+            cagr[label] = calculate_cagr(trendline[-1], col_data.iloc[0], len(col_data)/trading_days_per_year + num_future_years)
+            #cagr_text = ax.text(len(x_extended), trendline[-1], f"CAGR: {cagr[label]*100:.2f}%", color='blue', fontsize=9, ha='right', va='bottom')
 
     # Create a new figure and plot the curves
     fig, ax = plt.subplots()
+    cagr['average'] = calculate_cagr(trendlines['average'][-1], col_data.iloc[-1], num_future_years)
+    cagr_text = ax.text(len(x_extended)-1, trendlines['average'][-1], f"Compounded Growth: {cagr['average']*100:.2f}%", color='blue', fontsize=9, ha='right', va='bottom')
+
     colors = {'good': 'green', 'poor': 'red', 'average': 'blue'}
     for label, trendline in trendlines.items():
         ax.plot(x_extended, trendline, label=f'Long term trend in {label} case', color=colors[label], alpha=0.3)
@@ -80,7 +101,11 @@ def plot_trend_data(data_file, position, num_future_years=5, trading_days_per_ye
             for i in range(1, len(x_extended)):
                 trendlines['average'].append(trendlines['average'][-1] * (1 + exponent))
             ax.lines[2].set_ydata(trendlines['average'])
+            cagr['average'] = calculate_cagr(trendlines['average'][-1], col_data.iloc[-1], num_future_years)
+            cagr_text.set_text(f"Compounded Growth: {cagr['average']*100:.2f}%")
+            cagr_text.set_position((len(x_extended), trendlines['average'][-1]))
             fig.canvas.draw()
+
 
     # Connect the onclick function to the figure
     fig.canvas.mpl_connect('button_press_event', onclick)
@@ -88,10 +113,9 @@ def plot_trend_data(data_file, position, num_future_years=5, trading_days_per_ye
     # Show the plot
     plt.show(block=False)
 
+
 # Plot the data from the first file in one window
-data_filename = 'GSPC.csv'
-script_dir = os.path.dirname(os.path.abspath(__file__))
-data_file_path = os.path.join(script_dir, data_filename)
+data_file_path = select_file()
 plot_trend_data(data_file_path, position=None)
 
 # Keep the plot window open
