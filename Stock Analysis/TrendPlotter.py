@@ -7,6 +7,9 @@ from tkinter import filedialog
 from tkinter import Tk
 
 def calculate_cagr(end_value, start_value, periods):
+    '''
+    CAGR stands for "Compound Annual Growth Rate"
+    '''
     cagr = (end_value / start_value) ** (1/periods) - 1
     if np.isnan(cagr):
         print(f"Invalid CAGR calculation: end_value={end_value}, start_value={start_value}, periods={periods}")
