@@ -21,7 +21,7 @@ def select_file():
     filename = filedialog.askopenfilename() # show an "Open" dialog box and return the path to the selected file
     return filename
 
-def plot_trend_data(data_file, position, num_future_years=10, trading_days_per_year=260):
+def plot_trend_data(data_file, num_future_years=10, trading_days_per_year=260):
     # Read in the CSV file
     data = pd.read_csv(data_file)
     # Convert the 'Date' column to a datetime object, skipping the header row
