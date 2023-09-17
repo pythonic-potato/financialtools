@@ -119,7 +119,7 @@ def plot_trend_data(data_file, num_future_years=10, trading_days_per_year=260):
 
 # Plot the data from the first file in one window
 data_file_path = select_file()
-plot_trend_data(data_file_path, position=None)
+plot_trend_data(data_file_path)
 
 # Keep the plot window open
 plt.pause(0.1)
