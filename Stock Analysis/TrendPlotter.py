@@ -1,10 +1,9 @@
 import os
-import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
-import math
 from tkinter import filedialog
 from tkinter import Tk
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
 def calculate_cagr(end_value, start_value, periods):
     '''
